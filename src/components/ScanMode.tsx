@@ -51,7 +51,7 @@ function MatchDetails({
   showEarlierBadge: boolean
 }) {
   return (
-    <div className="match">
+    <div className="match-item">
       <p className="match-sheet">{match.sheetName}</p>
       {match.alreadyFound && showEarlierBadge && (
         <p className="badge warn">Already scanned earlier</p>
