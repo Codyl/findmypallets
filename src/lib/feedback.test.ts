@@ -1,4 +1,9 @@
-import { createFeedback, SOUND_PATTERNS, VIBRATION_PATTERNS } from './feedback'
+import {
+  createFeedback,
+  SOUND_PATTERNS,
+  VIBRATION_PATTERNS,
+  type AudioContextLike,
+} from './feedback'
 
 interface FakeOsc {
   type: string
@@ -42,7 +47,7 @@ function fakeContext(state: 'running' | 'suspended' = 'running') {
 
 function setup(state: 'running' | 'suspended' = 'running') {
   const { ctx, oscillators } = fakeContext(state)
-  const createContext = vi.fn(() => ctx)
+  const createContext = vi.fn(() => ctx as unknown as AudioContextLike)
   const vibrate = vi.fn(() => true)
   const feedback = createFeedback({ createContext, vibrate })
   return { feedback, ctx, oscillators, createContext, vibrate }
@@ -149,7 +154,7 @@ describe('createFeedback', () => {
     it('works when vibration is unsupported', () => {
       const { ctx } = fakeContext()
       const feedback = createFeedback({
-        createContext: () => ctx,
+        createContext: () => ctx as unknown as AudioContextLike,
         vibrate: undefined,
       })
       expect(() => feedback.play('match')).not.toThrow()
