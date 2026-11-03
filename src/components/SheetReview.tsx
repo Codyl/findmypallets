@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { sheetProgress } from '../lib/matcher'
 import { checkPlateColumn } from '../lib/plate'
 import { useApp } from '../state/context'
+import ExportPanel from './ExportPanel'
 
 interface Props {
   sheetId: string
@@ -148,6 +149,8 @@ export default function SheetReview({ sheetId, onBack }: Props) {
           </ul>
         </div>
       )}
+
+      <ExportPanel mode={{ kind: 'sheet', sheetId: sheet.id }} />
 
       <div className="table-wrap">
         <table>

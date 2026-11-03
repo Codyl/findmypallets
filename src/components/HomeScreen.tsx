@@ -7,6 +7,7 @@ import {
   type ParsedTab,
 } from '../lib/parseSpreadsheet'
 import { useApp } from '../state/context'
+import ExportPanel from './ExportPanel'
 import SheetCard from './SheetCard'
 import TabPicker from './TabPicker'
 
@@ -100,6 +101,8 @@ export default function HomeScreen({ onOpenSheet, onStartScan }: Props) {
           ))}
         </ul>
       )}
+
+      {state.sheets.length > 0 && <ExportPanel mode={{ kind: 'session' }} />}
 
       {pendingTabs && (
         <TabPicker

@@ -72,17 +72,19 @@ export function AppProvider({
   const skipNext = useRef(true)
 
   const flush = useRef(() => {})
-  flush.current = () => {
-    if (timer.current) clearTimeout(timer.current)
-    timer.current = null
-    const data = pending.current
-    pending.current = null
-    if (!data || !storage) return
-    storage.save(data).then(
-      () => setSaveFailed(false),
-      () => setSaveFailed(true),
-    )
-  }
+  useEffect(() => {
+    flush.current = () => {
+      if (timer.current) clearTimeout(timer.current)
+      timer.current = null
+      const data = pending.current
+      pending.current = null
+      if (!data || !storage) return
+      storage.save(data).then(
+        () => setSaveFailed(false),
+        () => setSaveFailed(true),
+      )
+    }
+  }, [storage])
 
   useEffect(() => {
     if (!storage || !ready) return

@@ -1,4 +1,5 @@
 import Papa from 'papaparse'
+import { loadExcel } from './excel'
 
 /** One tab of an uploaded workbook (or the single sheet of a CSV). */
 export interface ParsedTab {
@@ -16,8 +17,6 @@ export class SpreadsheetError extends Error {
     this.name = 'SpreadsheetError'
   }
 }
-
-type ExcelModule = typeof import('exceljs')
 
 const CSV_EXTENSIONS = ['csv', 'tsv', 'txt']
 const EXCEL_EXTENSIONS = ['xlsx', 'xlsm']
@@ -126,10 +125,7 @@ function cellText(cell: import('exceljs').Cell): string {
 }
 
 async function parseExcel(data: ArrayBuffer): Promise<ParsedTab[]> {
-  const mod = (await import('exceljs')) as ExcelModule & {
-    default?: ExcelModule
-  }
-  const Workbook = mod.Workbook ?? mod.default?.Workbook
+  const { Workbook } = await loadExcel()
   const workbook = new Workbook()
   try {
     await workbook.xlsx.load(data)

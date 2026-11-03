@@ -181,4 +181,10 @@ describe('SheetReview', () => {
       expect(screen.queryByText(/1 blank/i)).toBeNull()
     })
   })
+
+  it('offers export for this sheet', () => {
+    renderReview()
+    expect(screen.getByRole('button', { name: /download csv/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /download excel/i })).toBeInTheDocument()
+  })
 })

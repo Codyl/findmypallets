@@ -167,4 +167,30 @@ describe('HomeScreen', () => {
     await userEvent.click(screen.getByRole('button', { name: /start scanning/i }))
     expect(onStartScan).toHaveBeenCalled()
   })
+
+  it('offers a whole-session export only once there are sheets', async () => {
+    const { unmount } = render(
+      <AppProvider>
+        <HomeScreen onOpenSheet={vi.fn()} onStartScan={vi.fn()} />
+      </AppProvider>,
+    )
+    expect(screen.queryByText('Export')).toBeNull()
+    unmount()
+
+    renderHome({}, [
+      {
+        id: 'a',
+        name: 'Dock A',
+        source: 'excel',
+        headers: ['Plate'],
+        rows: [['A1']],
+        matchColumn: 0,
+        found: {},
+      },
+    ])
+    expect(screen.getByText('Export')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /download excel \(all sheets\)/i }),
+    ).toBeInTheDocument()
+  })
 })
