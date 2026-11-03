@@ -200,4 +200,39 @@ describe('ScanMode', () => {
     })
     expect(feedback.play).not.toHaveBeenCalled()
   })
+
+  describe('clearing unmatched scans', () => {
+    const withUnmatched = {
+      unmatched: [
+        { value: 'BAD1', scannedAt: '2026-11-02T20:00:00.000Z', scope: 'All sheets' },
+        { value: 'BAD2', scannedAt: '2026-11-02T20:01:00.000Z', scope: 'All sheets' },
+      ],
+    }
+
+    it('clears the list after confirming', async () => {
+      setup([sheetA], withUnmatched)
+      await userEvent.click(screen.getByRole('button', { name: /clear unmatched scans/i }))
+      const dialog = screen.getByRole('dialog', { name: /clear unmatched scans\?/i })
+      await userEvent.click(within(dialog).getByRole('button', { name: /^clear$/i }))
+
+      expect(screen.queryByText('BAD1')).toBeNull()
+      expect(screen.queryByRole('region', { name: /unmatched scans/i })).toBeNull()
+    })
+
+    it('keeps the list when cancelled', async () => {
+      setup([sheetA], withUnmatched)
+      await userEvent.click(screen.getByRole('button', { name: /clear unmatched scans/i }))
+      await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(screen.getByText('BAD1')).toBeInTheDocument()
+    })
+
+    it('keeps the scan field working after the dialog closes', async () => {
+      setup([sheetA], withUnmatched)
+      await start()
+      await userEvent.click(screen.getByRole('button', { name: /clear unmatched scans/i }))
+      await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      await userEvent.keyboard('ABC123{Enter}')
+      expect(result()).toHaveAttribute('data-kind', 'match')
+    })
+  })
 })

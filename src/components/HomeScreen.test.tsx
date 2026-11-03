@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ExcelJS from 'exceljs'
 import { AppProvider } from '../state/AppProvider'
@@ -192,5 +192,127 @@ describe('HomeScreen', () => {
     expect(
       screen.getByRole('button', { name: /download excel \(all sheets\)/i }),
     ).toBeInTheDocument()
+  })
+
+  describe('clearing and deleting', () => {
+    const sheetOf = (id: string, name: string, found = {}): Sheet => ({
+      id,
+      name,
+      source: 'excel',
+      headers: ['Plate'],
+      rows: [['A1'], ['A2']],
+      matchColumn: 0,
+      found,
+    })
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('deletes a sheet after confirming, and undo brings it back in place', async () => {
+      renderHome({}, [sheetOf('a', 'Dock A'), sheetOf('b', 'Dock B')])
+
+      await userEvent.click(screen.getByRole('button', { name: /delete dock a/i }))
+      const dialog = screen.getByRole('dialog', { name: /delete dock a\?/i })
+      await userEvent.click(within(dialog).getByRole('button', { name: /^delete$/i }))
+
+      expect(screen.queryByText('Dock A')).toBeNull()
+      expect(screen.getByText('Dock B')).toBeInTheDocument()
+      const toast = screen.getByRole('status', { name: /undo/i })
+      expect(toast).toHaveTextContent('Deleted Dock A')
+
+      await userEvent.click(within(toast).getByRole('button', { name: /undo/i }))
+
+      const cards = screen.getAllByRole('listitem')
+      expect(cards[0]).toHaveTextContent('Dock A')
+      expect(cards[1]).toHaveTextContent('Dock B')
+      expect(screen.queryByRole('status', { name: /undo/i })).toBeNull()
+    })
+
+    it('keeps the sheet when deleting is cancelled', async () => {
+      renderHome({}, [sheetOf('a', 'Dock A')])
+      await userEvent.click(screen.getByRole('button', { name: /delete dock a/i }))
+      await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(screen.getByText('Dock A')).toBeInTheDocument()
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(screen.queryByRole('status', { name: /undo/i })).toBeNull()
+    })
+
+    it('lets the undo offer expire after 8 seconds', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+      renderHome({}, [sheetOf('a', 'Dock A')])
+
+      await user.click(screen.getByRole('button', { name: /delete dock a/i }))
+      await user.click(screen.getByRole('button', { name: /^delete$/i }))
+      expect(screen.getByRole('status', { name: /undo/i })).toBeInTheDocument()
+
+      await act(async () => {
+        vi.advanceTimersByTime(7_900)
+      })
+      expect(screen.getByRole('status', { name: /undo/i })).toBeInTheDocument()
+
+      await act(async () => {
+        vi.advanceTimersByTime(200)
+      })
+      expect(screen.queryByRole('status', { name: /undo/i })).toBeNull()
+      expect(screen.queryByText('Dock A')).toBeNull()
+    })
+
+    it('can export a sheet before deleting it', async () => {
+      const download = vi.fn()
+      renderHome({ download }, [sheetOf('a', 'Dock A')])
+      await userEvent.click(screen.getByRole('button', { name: /delete dock a/i }))
+      await userEvent.click(screen.getByRole('button', { name: /export first/i }))
+
+      await waitFor(() => expect(download).toHaveBeenCalledTimes(1))
+      expect(download.mock.calls[0][0]).toMatch(/^Dock A \d{4}-\d{2}-\d{2}\.xlsx$/)
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(screen.getByText('Dock A')).toBeInTheDocument()
+    })
+
+    it('resets progress after confirming but keeps the sheet', async () => {
+      renderHome({}, [sheetOf('a', 'Dock A', { 0: 't' })])
+      expect(screen.getByText('1 of 2 found')).toBeInTheDocument()
+
+      await userEvent.click(
+        screen.getByRole('button', { name: /reset progress for dock a/i }),
+      )
+      const dialog = screen.getByRole('dialog', { name: /reset progress/i })
+      await userEvent.click(within(dialog).getByRole('button', { name: /^reset$/i }))
+
+      expect(screen.getByText('0 of 2 found')).toBeInTheDocument()
+      expect(screen.getByText('Dock A')).toBeInTheDocument()
+    })
+
+    it('does not offer a reset when nothing has been found', () => {
+      renderHome({}, [sheetOf('a', 'Dock A')])
+      expect(
+        screen.getByRole('button', { name: /reset progress for dock a/i }),
+      ).toBeDisabled()
+    })
+
+    it('clears every sheet after confirming', async () => {
+      renderHome({}, [sheetOf('a', 'Dock A'), sheetOf('b', 'Dock B')])
+      await userEvent.click(screen.getByRole('button', { name: /clear all sheets/i }))
+      const dialog = screen.getByRole('dialog', { name: /clear all sheets\?/i })
+      await userEvent.click(within(dialog).getByRole('button', { name: /^clear all$/i }))
+
+      expect(screen.getByText(/no sheets yet/i)).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /clear all sheets/i })).toBeNull()
+    })
+
+    it('can export everything before clearing all', async () => {
+      const download = vi.fn()
+      renderHome({ download }, [sheetOf('a', 'Dock A')])
+      await userEvent.click(screen.getByRole('button', { name: /clear all sheets/i }))
+      await userEvent.click(screen.getByRole('button', { name: /export first/i }))
+      await waitFor(() => expect(download).toHaveBeenCalledTimes(1))
+      expect(download.mock.calls[0][0]).toMatch(/^findmypallets \d{4}-\d{2}-\d{2}\.xlsx$/)
+    })
+
+    it('hides the clear-all button when there is nothing to clear', () => {
+      renderHome()
+      expect(screen.queryByRole('button', { name: /clear all sheets/i })).toBeNull()
+    })
   })
 })

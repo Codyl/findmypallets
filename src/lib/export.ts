@@ -2,6 +2,9 @@ import Papa from 'papaparse'
 import { loadExcel } from './excel'
 import type { Sheet, UnmatchedScan } from './types'
 
+export const XLSX_MIME =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
 export type ExportFilter = 'all' | 'found' | 'not-found'
 
 export interface ExportTable {

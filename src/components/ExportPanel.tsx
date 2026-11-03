@@ -5,6 +5,7 @@ import {
   sessionToXlsx,
   sheetToCsv,
   sheetToXlsx,
+  XLSX_MIME,
   type ExportFilter,
 } from '../lib/export'
 import { useApp } from '../state/context'
@@ -29,9 +30,6 @@ const FILE_LABELS: Record<ExportFilter, string | undefined> = {
   found: 'found',
   'not-found': 'not found',
 }
-
-const XLSX_TYPE =
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 export default function ExportPanel({
   mode,
@@ -106,7 +104,7 @@ export default function ExportPanel({
                   'xlsx',
                   async () =>
                     new Blob([(await sheetToXlsx(sheet, filter)) as BlobPart], {
-                      type: XLSX_TYPE,
+                      type: XLSX_MIME,
                     }),
                 )
               }
@@ -129,7 +127,7 @@ export default function ExportPanel({
                         filter,
                       )) as BlobPart,
                     ],
-                    { type: XLSX_TYPE },
+                    { type: XLSX_MIME },
                   ),
               )
             }

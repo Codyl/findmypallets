@@ -3,6 +3,7 @@ import { createFeedback, type Feedback } from '../lib/feedback'
 import { getScanTargets } from '../lib/matcher'
 import type { ScanMatch, ScanResult } from '../lib/types'
 import { useApp } from '../state/context'
+import ConfirmDialog from './ConfirmDialog'
 import ScanInput from './ScanInput'
 
 const defaultFeedback = createFeedback()
@@ -76,6 +77,7 @@ export default function ScanMode({
 }: Props) {
   const { state, dispatch } = useApp()
   const [started, setStarted] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
   const unmatchedTitleId = useId()
 
   const { active, skipped } = getScanTargets(state.sheets, state.scope)
@@ -148,6 +150,7 @@ export default function ScanMode({
 
       {started ? (
         <ScanInput
+          paused={confirmClear}
           onScan={(value) => dispatch({ type: 'scan', value, now: new Date() })}
         />
       ) : (
@@ -191,6 +194,9 @@ export default function ScanMode({
           <h3 id={unmatchedTitleId}>
             Unmatched scans ({state.unmatched.length})
           </h3>
+          <button type="button" onClick={() => setConfirmClear(true)}>
+            Clear unmatched scans
+          </button>
           <ul>
             {recentUnmatched.map((entry, i) => (
               <li key={`${entry.scannedAt}-${i}`}>
@@ -202,6 +208,18 @@ export default function ScanMode({
             ))}
           </ul>
         </section>
+      )}
+      {confirmClear && (
+        <ConfirmDialog
+          title="Clear unmatched scans?"
+          message="The list of scans that matched nothing will be emptied."
+          confirmLabel="Clear"
+          onConfirm={() => {
+            dispatch({ type: 'clear-unmatched' })
+            setConfirmClear(false)
+          }}
+          onCancel={() => setConfirmClear(false)}
+        />
       )}
     </section>
   )
