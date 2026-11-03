@@ -48,4 +48,29 @@ describe('App', () => {
     await userEvent.click(screen.getByRole('button', { name: /back/i }))
     expect(screen.getByText('1 of 2 found')).toBeInTheDocument()
   })
+
+  it('restores saved sheets from storage', async () => {
+    const storage = {
+      load: async () => ({
+        sheets: [
+          {
+            id: 'a',
+            name: 'Saved Dock',
+            source: 'excel' as const,
+            headers: ['Plate'],
+            rows: [['A1'], ['A2']],
+            matchColumn: 0,
+            found: { 0: '2026-11-02T20:00:00.000Z' },
+          },
+        ],
+        unmatched: [],
+        scope: { kind: 'all' as const },
+      }),
+      save: async () => {},
+      clear: async () => {},
+    }
+    render(<App storage={storage} />)
+    expect(await screen.findByText('Saved Dock')).toBeInTheDocument()
+    expect(screen.getByText('1 of 2 found')).toBeInTheDocument()
+  })
 })
