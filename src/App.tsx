@@ -1,8 +1,11 @@
+import HomeScreen from './components/HomeScreen'
+import { AppProvider } from './state/AppProvider'
+
 export default function App() {
   return (
-    <main>
-      <h1>findmypallets</h1>
-      <p>Scan a license plate and match it against your spreadsheets.</p>
-    </main>
+    <AppProvider>
+      {/* Review and scan screens are wired in as they are built. */}
+      <HomeScreen onOpenSheet={() => {}} onStartScan={() => {}} />
+    </AppProvider>
   )
 }
