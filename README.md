@@ -68,6 +68,13 @@ The build output in `dist/` is a static site, so any static host works.
    publishes `dist/`. Every push to `main` redeploys.
 3. Open the HTTPS URL it gives you on the phone.
 
+**GitHub Pages (workflow included)**
+1. In the repo, open *Settings → Pages* and set *Source* to **GitHub Actions**.
+2. Push to `main` (or run the *Deploy to GitHub Pages* workflow). It tests,
+   builds with the `/findmypallets/` base path, and publishes.
+3. Open `https://<your-username>.github.io/findmypallets/`.
+Pages from a private repo needs a paid GitHub plan; public repos are free.
+
 **S3 + CloudFront**: run `npm run build`, upload `dist/` to a private S3 bucket,
 and serve it through CloudFront with Origin Access Control.
 
